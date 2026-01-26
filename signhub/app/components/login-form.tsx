@@ -93,6 +93,9 @@ export const LoginForm = () => {
       <Button type="submit" className="w-full" disabled={isLoading}>
         {isLoading ? "Đang đăng nhập..." : "Đăng nhập"}
       </Button>
+      <Button className="w-full" disabled={isLoading}>
+        Đăng nhập thông qua keycloak
+      </Button>
     </form>
   );
 };

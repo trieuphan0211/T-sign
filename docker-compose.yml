@@ -1,7 +1,7 @@
 version: '3'
 services:
 # DATABASE
- # Database for Keycloak 
+ # Database for Keycloak
   keycloakdb:
     image: postgres:15
     ports:
@@ -18,26 +18,26 @@ services:
       timeout: 5s
       retries: 5
 # SERVICE
-
   keycloak:
     image: quay.io/keycloak/keycloak:latest
-    command: start-dev # Chạy chế độ Dev để không bắt buộc HTTPS ngay lập tức
+    command: start-dev # Run dev mode
     environment:
       KC_DB: postgres
       KC_DB_URL: jdbc:postgresql://keycloakdb:5432/keycloak
       KC_DB_USERNAME: keycloak
       KC_DB_PASSWORD: keycloak
-      KEYCLOAK_ADMIN: admin          # Tài khoản đăng nhập trang quản trị
-      KEYCLOAK_ADMIN_PASSWORD: admin # Mật khẩu admin
-      KC_HOSTNAME_STRICT: "false"       # Cho phép truy cập từ mọi IP/Domain
-      KC_HOSTNAME_STRICT_HTTPS: "false" # Không bắt buộc HTTPS
-      KC_HTTP_ENABLED: "true"           # Bật lắng nghe HTTP rõ ràng
-    ports: 
-      - "8080:8080" # Map ra port 8080 (Không trùng với EJBCA đang dùng port 80 và 443)
+      KEYCLOAK_ADMIN: admin          # Account login admin role
+      KEYCLOAK_ADMIN_PASSWORD: admin # Password admin
+      KC_HOSTNAME_STRICT: "false"
+      KC_HOSTNAME_STRICT_HTTPS: "false"
+      KC_HTTP_ENABLED: "true"
+      KC_HOSTNAME_URL: "http://100.115.112.37:8080"
+      KC_HOSTNAME_ADMIN_URL: "http://100.115.112.37:8080"
+    ports:
+      - "8080:8080"
     depends_on:
       keycloakdb:
         condition: service_healthy
-
   # Database maria DB for ejbca
   # ejbcadb:
   #   image: mariadb:10.11
@@ -67,11 +67,11 @@ services:
   #     - DATABASE_PASSWORD=ejbca
   #     - TLS_SETUP_ENABLED=true
   #   volumes:
-  #     - ./ejbca_custom:/opt/primekey/ejbca/custom  
+  #     - ./ejbca_custom:/opt/primekey/ejbca/custom
   #   depends_on:
   #     db:
   #       condition: service_healthy
- 
+
   # cert_db:
   #   image: postgres:15
   #   ports:
@@ -81,7 +81,7 @@ services:
   #     POSTGRES_USER: admin
   #     POSTGRES_PASSWORD: admin
   #   volumes:
-  #     - ./cert_postgres_data:/var/lib/postgresql/data 
+  #     - ./cert_postgres_data:/var/lib/postgresql/data
   # signing_db:
   #   image: postgres:15
   #   ports:
@@ -103,13 +103,10 @@ services:
   #   ports:
   #     - "8083:8083"
   #   environment:
-  #     # Trỏ vào file cfg mà ta đã COPY vào trong Dockerfile
   #     - HSM_PIN=1234
   #     - HSM_SO_PIN=1234
   #     - HSM_TOKEN_LABEL=SigningToken
   #   volumes:
-  #     # (Quan trọng) Mount thư mục tokens ra ngoài Windows
-  #     # để restart container không bị mất Key
   #     - ./softhsm-data:/var/lib/softhsm/tokens
   #     - ./Signing-Service/build/libs/Signing-Service-0.0.1-SNAPSHOT.jar:/app/Signing-Service.jar
   #   depends_on:
