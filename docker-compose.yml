@@ -17,6 +17,8 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+# SERVICE
+
   keycloak:
     image: quay.io/keycloak/keycloak:latest
     command: start-dev # Chạy chế độ Dev để không bắt buộc HTTPS ngay lập tức
@@ -27,6 +29,9 @@ services:
       KC_DB_PASSWORD: keycloak
       KEYCLOAK_ADMIN: admin          # Tài khoản đăng nhập trang quản trị
       KEYCLOAK_ADMIN_PASSWORD: admin # Mật khẩu admin
+      KC_HOSTNAME_STRICT: "false"       # Cho phép truy cập từ mọi IP/Domain
+      KC_HOSTNAME_STRICT_HTTPS: "false" # Không bắt buộc HTTPS
+      KC_HTTP_ENABLED: "true"           # Bật lắng nghe HTTP rõ ràng
     ports: 
       - "8080:8080" # Map ra port 8080 (Không trùng với EJBCA đang dùng port 80 và 443)
     depends_on:
