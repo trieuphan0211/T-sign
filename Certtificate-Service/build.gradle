@@ -1,0 +1,124 @@
+plugins {
+    id 'java'
+    id 'org.springframework.boot' version '4.0.0'
+    id 'io.spring.dependency-management' version '1.1.7'
+}
+
+group = 'vn.stephenphan'
+version = '0.0.1-SNAPSHOT'
+description = 'Certtificate-Service'
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(17)
+    }
+}
+
+configurations {
+    compileOnly {
+        extendsFrom annotationProcessor
+    }
+}
+
+repositories {
+    mavenCentral()
+}
+
+ext {
+    set('springCloudVersion', "2025.1.0")
+}
+
+configurations {
+    jaxws // Tạo cấu hình riêng cho công cụ sinh code WSDL
+}
+dependencies {
+    implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+    implementation 'org.springframework.boot:spring-boot-starter-webmvc'
+    implementation 'org.springframework.cloud:spring-cloud-starter-openfeign'
+    implementation 'org.apache.httpcomponents.client5:httpclient5'
+    implementation 'io.github.openfeign:feign-hc5'
+    implementation 'org.springframework.boot:spring-boot-starter-web-services'
+    implementation 'org.springframework:spring-oxm'
+    implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.3.0'
+    compileOnly 'org.projectlombok:lombok'
+    runtimeOnly 'org.postgresql:postgresql'
+    annotationProcessor 'org.projectlombok:lombok'
+    testImplementation 'org.springframework.boot:spring-boot-starter-data-jpa-test'
+    testImplementation 'org.springframework.boot:spring-boot-starter-webmvc-test'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+
+    // Thư viện hỗ trợ JAXB (cần thiết cho Java 11/17+)
+    implementation 'jakarta.xml.ws:jakarta.xml.ws-api:4.0.0' // API chuẩn mới
+    implementation 'com.sun.xml.ws:jaxws-rt:4.0.2'           // Runtime implementation
+
+    // Thư viện CÔNG CỤ để chạy task sinh code (Chỉ dùng lúc build)
+    jaxws 'com.sun.xml.ws:jaxws-tools:4.0.2'
+    jaxws 'jakarta.xml.ws:jakarta.xml.ws-api:4.0.0'
+    jaxws 'jakarta.xml.bind:jakarta.xml.bind-api:4.0.0'
+    jaxws 'jakarta.activation:jakarta.activation-api:2.1.0'
+    jaxws 'com.sun.xml.bind:jaxb-xjc:4.0.2'
+    jaxws 'com.sun.xml.bind:jaxb-jxc:4.0.2'
+}
+
+dependencyManagement {
+    imports {
+        mavenBom "org.springframework.cloud:spring-cloud-dependencies:${springCloudVersion}"
+    }
+}
+
+tasks.named('test') {
+    systemProperty 'user.timezone', 'UTC'
+    useJUnitPlatform()
+}
+tasks.named('bootRun') {
+    // Ép tham số hệ thống khi chạy task bootRun
+    systemProperty 'user.timezone', 'UTC'
+}
+// Định nghĩa thư mục chứa code sinh ra
+def jaxbTargetDir = file("build/generated/jaxb")
+
+tasks.register('genJaxb') {
+    // SỬA TẠI ĐÂY: Dùng file() để lấy đường dẫn tuyệt đối từ gốc dự án
+    def wsdlFile = file("src/main/resources/wsdl/ejbcaws.wsdl")
+
+    inputs.file wsdlFile
+    outputs.dir jaxbTargetDir
+
+    doLast {
+        jaxbTargetDir.mkdirs()
+
+        ant.taskdef(name: 'wsimport',
+                classname: 'com.sun.tools.ws.ant.WsImport',
+                classpath: configurations.jaxws.asPath)
+
+        ant.wsimport(
+                keep: true,
+                destdir: jaxbTargetDir,
+                package: 'vn.stephenphan.ejbca.soap.gen',
+                wsdl: wsdlFile, // Truyền biến file đã tạo ở trên
+                extension: true,
+                verbose: true,
+                xnocompile: true
+        ) {
+            xjcarg(value: "-XautoNameResolution")
+        }
+    }
+}
+
+// Đăng ký thư mục sinh ra vào source code để IntelliJ nhận diện
+sourceSets {
+    main {
+        java {
+            srcDir jaxbTargetDir
+        }
+    }
+}
+
+// Bắt buộc chạy task genJaxb trước khi compile Java
+compileJava.dependsOn genJaxb
+
+// Thêm đoạn này vào cuối file build.gradle
+tasks.named('bootJar') {
+    // Nếu gặp file trùng lặp, chỉ giữ lại một bản duy nhất (loại bỏ bản trùng)
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+}
