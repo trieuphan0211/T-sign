@@ -1,49 +1,15 @@
 version: '3'
 services:
-  db:
-    image: mariadb:10.11
-    environment:
-      - MYSQL_ROOT_PASSWORD=password
-      - MYSQL_DATABASE=ejbca
-      - MYSQL_USER=ejbca
-      - MYSQL_PASSWORD=ejbca
-    volumes:
-      - ./mariadb_data:/var/lib/mysql
-    ports:
-      - "3306:3306"
-    healthcheck:
-      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
-      interval: 10s
-      timeout: 5s
-      retries: 3
-  adminer:
-    image: adminer
-    restart: always
-    ports:
-      - 9090:8080
-  ejbca:
-    image: keyfactor/ejbca-ce:latest
-    hostname: localhost
-    ports:
-      - "80:8080"
-      - "443:8443"
-    environment:
-      - DATABASE_JDBC_URL=jdbc:mariadb://db:3306/ejbca?characterEncoding=UTF-8
-      - DATABASE_USER=ejbca
-      - DATABASE_PASSWORD=ejbca
-      - TLS_SETUP_ENABLED=true
-    volumes:
-      - ./ejbca_custom:/opt/primekey/ejbca/custom  
-    depends_on:
-      db:
-        condition: service_healthy
-  # Database riêng cho Keycloak (Khuyên dùng Postgres cho Keycloak vì ổn định hơn MariaDB)
-  keycloak_db:
+# DATABASE
+ # Database for Keycloak 
+  keycloakdb:
     image: postgres:15
+    ports:
+      - "7070:5432"
     environment:
       POSTGRES_DB: keycloak
       POSTGRES_USER: keycloak
-      POSTGRES_PASSWORD: password
+      POSTGRES_PASSWORD: keycloak
     volumes:
       - ./keycloak_postgres_data:/var/lib/postgresql/data
     healthcheck:
@@ -56,9 +22,9 @@ services:
     command: start-dev # Chạy chế độ Dev để không bắt buộc HTTPS ngay lập tức
     environment:
       KC_DB: postgres
-      KC_DB_URL: jdbc:postgresql://keycloak_db:5432/keycloak
+      KC_DB_URL: jdbc:postgresql://keycloakdb:7070/keycloak
       KC_DB_USERNAME: keycloak
-      KC_DB_PASSWORD: password
+      KC_DB_PASSWORD: keycloak
       KEYCLOAK_ADMIN: admin          # Tài khoản đăng nhập trang quản trị
       KEYCLOAK_ADMIN_PASSWORD: admin # Mật khẩu admin
     ports: 
@@ -66,56 +32,81 @@ services:
     depends_on:
       keycloak_db:
         condition: service_healthy
-  cert_db:
-    image: postgres:15
-    ports:
-      - "7070:5432"
-    environment:
-      POSTGRES_DB: certificate
-      POSTGRES_USER: admin
-      POSTGRES_PASSWORD: admin
-    volumes:
-      - ./cert_postgres_data:/var/lib/postgresql/data 
-  signing_db:
-    image: postgres:15
-    ports:
-      - "7071:5432"
-    environment:
-      POSTGRES_DB: signing
-      POSTGRES_USER: admin
-      POSTGRES_PASSWORD: admin
-    volumes:
-      - ./signing_postgres_data:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U keycloak"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-  signing-service:
-    build: .
-    image: signing-service
-    ports:
-      - "8083:8083"
-    environment:
-      # Trỏ vào file cfg mà ta đã COPY vào trong Dockerfile
-      - HSM_PIN=1234
-      - HSM_SO_PIN=1234
-      - HSM_TOKEN_LABEL=SigningToken
-    volumes:
-      # (Quan trọng) Mount thư mục tokens ra ngoài Windows
-      # để restart container không bị mất Key
-      - ./softhsm-data:/var/lib/softhsm/tokens
-      - ./Signing-Service/build/libs/Signing-Service-0.0.1-SNAPSHOT.jar:/app/Signing-Service.jar
-    depends_on:
-      signing_db:
-        condition: service_healthy
-  signhub_db:
-    image: postgres:15
-    ports:
-      - "7072:5432"
-    environment:
-      POSTGRES_DB: signhub
-      POSTGRES_USER: signhub
-      POSTGRES_PASSWORD: signhub
-    volumes:
-      - ./signhub_data:/var/lib/postgresql/data
+
+  # Database maria DB for ejbca
+  # ejbcadb:
+  #   image: mariadb:10.11
+  #   environment:
+  #     - MYSQL_ROOT_PASSWORD=password
+  #     - MYSQL_DATABASE=ejbca
+  #     - MYSQL_USER=ejbca
+  #     - MYSQL_PASSWORD=ejbca
+  #   volumes:
+  #     - ./mariadb_data:/var/lib/mysql
+  #   ports:
+  #     - "3306:3306"
+  #   healthcheck:
+  #     test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+  #     interval: 10s
+  #     timeout: 5s
+  #     retries: 3
+  # ejbca:
+  #   image: keyfactor/ejbca-ce:latest
+  #   hostname: localhost
+  #   ports:
+  #     - "80:8080"
+  #     - "443:8443"
+  #   environment:
+  #     - DATABASE_JDBC_URL=jdbc:mariadb://ejbcadb:3306/ejbca?characterEncoding=UTF-8
+  #     - DATABASE_USER=ejbca
+  #     - DATABASE_PASSWORD=ejbca
+  #     - TLS_SETUP_ENABLED=true
+  #   volumes:
+  #     - ./ejbca_custom:/opt/primekey/ejbca/custom  
+  #   depends_on:
+  #     db:
+  #       condition: service_healthy
+ 
+  # cert_db:
+  #   image: postgres:15
+  #   ports:
+  #     - "7070:5432"
+  #   environment:
+  #     POSTGRES_DB: certificate
+  #     POSTGRES_USER: admin
+  #     POSTGRES_PASSWORD: admin
+  #   volumes:
+  #     - ./cert_postgres_data:/var/lib/postgresql/data 
+  # signing_db:
+  #   image: postgres:15
+  #   ports:
+  #     - "7071:5432"
+  #   environment:
+  #     POSTGRES_DB: signing
+  #     POSTGRES_USER: admin
+  #     POSTGRES_PASSWORD: admin
+  #   volumes:
+  #     - ./signing_postgres_data:/var/lib/postgresql/data
+  #   healthcheck:
+  #     test: ["CMD-SHELL", "pg_isready -U keycloak"]
+  #     interval: 10s
+  #     timeout: 5s
+  #     retries: 5
+  # signing-service:
+  #   build: .
+  #   image: signing-service
+  #   ports:
+  #     - "8083:8083"
+  #   environment:
+  #     # Trỏ vào file cfg mà ta đã COPY vào trong Dockerfile
+  #     - HSM_PIN=1234
+  #     - HSM_SO_PIN=1234
+  #     - HSM_TOKEN_LABEL=SigningToken
+  #   volumes:
+  #     # (Quan trọng) Mount thư mục tokens ra ngoài Windows
+  #     # để restart container không bị mất Key
+  #     - ./softhsm-data:/var/lib/softhsm/tokens
+  #     - ./Signing-Service/build/libs/Signing-Service-0.0.1-SNAPSHOT.jar:/app/Signing-Service.jar
+  #   depends_on:
+  #     signing_db:
+  #       condition: service_healthy
