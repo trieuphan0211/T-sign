@@ -1,4 +1,4 @@
-import { LoginForm } from "@/app/components/login-form";
+import { LoginForm } from "@/components/login/login-form";
 import {
   Card,
   CardContent,
@@ -8,7 +8,7 @@ import {
 } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ArrowRight, Shield } from "lucide-react";
-import { RegisterForm } from "../components/register-form";
+import { RegisterForm } from "@/components/login/register-form";
 
 export default function Login() {
   return (

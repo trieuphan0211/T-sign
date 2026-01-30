@@ -4,9 +4,10 @@ import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ArrowRight, Eye, EyeOff, Lock, Mail, Shield } from "lucide-react";
+import { Eye, EyeOff, Key, Lock, Mail } from "lucide-react";
+import { signIn } from "next-auth/react";
 import { useState } from "react";
+import { Separator } from "@/components/ui/separator";
 
 export const LoginForm = () => {
   const [showPassword, setShowPassword] = useState(false);
@@ -17,10 +18,14 @@ export const LoginForm = () => {
     password: "",
     remember: false,
   });
-  function handleLogin() {}
+  function handleLoginWithKeycloak() {
+    signIn("keycloak", {
+      redirectTo: "/",
+    });
+  }
   function handleForgotPassword() {}
   return (
-    <form onSubmit={handleLogin} className="space-y-4">
+    <form className="space-y-4">
       <div className="space-y-2">
         <Label htmlFor="login-email">Email</Label>
         <div className="relative">
@@ -93,8 +98,27 @@ export const LoginForm = () => {
       <Button type="submit" className="w-full" disabled={isLoading}>
         {isLoading ? "Đang đăng nhập..." : "Đăng nhập"}
       </Button>
-      <Button className="w-full" disabled={isLoading}>
-        Đăng nhập thông qua keycloak
+      {/* SSO Divider */}
+      <div className="relative my-4">
+        <div className="absolute inset-0 flex items-center">
+          <Separator className="w-full" />
+        </div>
+        <div className="relative flex justify-center text-xs uppercase">
+          <span className="bg-card px-2 text-muted-foreground">
+            Hoặc đăng nhập bằng
+          </span>
+        </div>
+      </div>
+      {/* Keycloak SSO Button */}
+      <Button
+        type="button"
+        variant="outline"
+        className="w-full gap-2"
+        onClick={handleLoginWithKeycloak}
+        disabled={isLoading}
+      >
+        <Key className="h-4 w-4" />
+        Đăng nhập với Keycloak SSO
       </Button>
     </form>
   );

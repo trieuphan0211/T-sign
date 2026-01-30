@@ -6,6 +6,7 @@ services:
     image: postgres:15
     ports:
       - "7070:5432"
+    restart: unless-stopped
     environment:
       POSTGRES_DB: keycloak
       POSTGRES_USER: keycloak
@@ -21,6 +22,7 @@ services:
   keycloak:
     image: quay.io/keycloak/keycloak:latest
     command: start-dev # Run dev mode
+    restart: unless-stopped
     environment:
       KC_DB: postgres
       KC_DB_URL: jdbc:postgresql://keycloakdb:5432/keycloak
