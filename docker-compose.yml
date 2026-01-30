@@ -40,6 +40,14 @@ services:
     depends_on:
       keycloakdb:
         condition: service_healthy
+  signhub:
+    build: .
+    image: signhub
+    ports:
+      - "3000:3000"
+    environment:
+      # Bắt buộc khi chạy trong Docker/Proxy
+      AUTH_TRUST_HOST: "true"
   # Database maria DB for ejbca
   # ejbcadb:
   #   image: mariadb:10.11
