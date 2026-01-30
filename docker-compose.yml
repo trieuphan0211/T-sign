@@ -1,5 +1,17 @@
 version: '3'
 services:
+  # Nginx for preverse proxy
+  nginx-proxy:
+    image: nginx:alpine
+    container_name: nginx-proxy
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
+    networks:
+      - web-network
 # DATABASE
  # Database for Keycloak
   keycloakdb:
@@ -7,6 +19,8 @@ services:
     ports:
       - "7070:5432"
     restart: unless-stopped
+    networks:
+      - web-network
     environment:
       POSTGRES_DB: keycloak
       POSTGRES_USER: keycloak
@@ -21,7 +35,12 @@ services:
 # SERVICE
   keycloak:
     image: quay.io/keycloak/keycloak:latest
-    command: start-dev # Run dev mode
+    command: 
+      - start
+      - --http-enabled=true
+      - --hostname=https://sso.stephen.io.vn
+      - --proxy-headers=xforwarded
+      - --http-relative-path=/
     restart: unless-stopped
     environment:
       KC_DB: postgres
@@ -30,13 +49,18 @@ services:
       KC_DB_PASSWORD: keycloak
       KEYCLOAK_ADMIN: admin          # Account login admin role
       KEYCLOAK_ADMIN_PASSWORD: admin # Password admin
-      KC_HOSTNAME_STRICT: "false"
-      KC_HOSTNAME_STRICT_HTTPS: "false"
-      KC_HTTP_ENABLED: "true"
-      KC_HOSTNAME_URL: "http://100.115.112.37:8080"
-      KC_HOSTNAME_ADMIN_URL: "http://100.115.112.37:8080"
+        #KC_HOSTNAME: sso.stephen.io.vn
+        #KC_HTTP_ENABLED: "true"
+        #KC_PROXY_HEADERS: xforwarded
+        #KC_HOSTNAME_STRICT: "false"
+        #KC_HTTP_STRICT_HTTPS: "false"
+        #KC_HOSTNAME: "sso.stephen.io.vn"
+        #KC_HOSTNAME_URL: "https://sso.stephen.io.vn"
+        #KC_HOSTNAME_ADMIN_URL: "https://sso.stephen.io.vn"
     ports:
       - "8080:8080"
+    networks:
+      - web-network
     depends_on:
       keycloakdb:
         condition: service_healthy
@@ -49,6 +73,9 @@ services:
     environment:
       # Bắt buộc khi chạy trong Docker/Proxy
       AUTH_TRUST_HOST: "true"
+networks:
+  web-network:
+    driver: bridge
   # Database maria DB for ejbca
   # ejbcadb:
   #   image: mariadb:10.11
