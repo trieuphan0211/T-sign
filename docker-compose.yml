@@ -87,6 +87,8 @@ services:
     restart: unless-stopped
     ports:
       - "3000:3000"
+    networks:
+      - web-network
     environment:
       # Bắt buộc khi chạy trong Docker/Proxy
       AUTH_TRUST_HOST: "true"
