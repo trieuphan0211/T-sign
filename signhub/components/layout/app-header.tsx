@@ -20,7 +20,9 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { useSession } from "next-auth/react";
+import { signOut, useSession } from "next-auth/react";
+import { federatedSignOut } from "@/actions/auth-actions";
+import Link from "next/link";
 
 const organizations = [
   { id: "1", name: "Công ty ABC", logo: "ABC" },
@@ -56,6 +58,7 @@ export function AppHeader() {
   const session = useSession();
   const [selectedOrg, setSelectedOrg] = useState(organizations[0]);
   const unreadCount = notifications.filter((n) => n.unread).length;
+
   return (
     <header className="sticky top-0 z-30 flex h-16 items-center gap-4 border-b border-border bg-card/95 backdrop-blur supports-backdrop-filter:bg-card/60 px-6">
       {/* Search */}
@@ -165,12 +168,14 @@ export function AppHeader() {
             <Avatar className="h-8 w-8">
               <AvatarImage src="" />
               <AvatarFallback className="bg-primary text-primary-foreground text-sm">
-                NT
+                {session.data?.user?.name?.split(" ").pop()?.[0] || "U"}
               </AvatarFallback>
             </Avatar>
             <div className="hidden sm:block text-left">
               <p className="text-sm font-medium">{session.data?.user?.name}</p>
-              <p className="text-xs text-muted-foreground">Admin</p>
+              <p className="text-xs text-muted-foreground capitalize">
+                {session.data?.user?.role?.toLowerCase()}
+              </p>
             </div>
             <ChevronDown className="h-4 w-4 text-muted-foreground" />
           </Button>
@@ -178,16 +183,24 @@ export function AppHeader() {
         <DropdownMenuContent align="end" className="w-56">
           <DropdownMenuLabel>Tài khoản của tôi</DropdownMenuLabel>
           <DropdownMenuSeparator />
-          <DropdownMenuItem className="gap-3">
-            <User className="h-4 w-4" />
-            <span>Hồ sơ cá nhân</span>
-          </DropdownMenuItem>
+          <Link href="/profile">
+            <DropdownMenuItem className="gap-3">
+              <User className="h-4 w-4" />
+              <span>Hồ sơ cá nhân</span>
+            </DropdownMenuItem>
+          </Link>
           <DropdownMenuItem className="gap-3">
             <Settings className="h-4 w-4" />
             <span>Cài đặt</span>
           </DropdownMenuItem>
           <DropdownMenuSeparator />
-          <DropdownMenuItem className="gap-3 text-destructive focus:text-destructive">
+          <DropdownMenuItem
+            className="gap-3 text-destructive focus:text-destructive"
+            onClick={async () => {
+              const logoutUrl = await federatedSignOut();
+              window.location.href = logoutUrl;
+            }}
+          >
             Đăng xuất
           </DropdownMenuItem>
         </DropdownMenuContent>

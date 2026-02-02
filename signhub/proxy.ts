@@ -2,11 +2,10 @@ import { auth } from "@/auth";
 import { NextResponse } from "next/server";
 
 export default auth((request) => {
-  console.log(request.nextUrl);
   // 1. Check Login
   const isLoggedIn = !!request.auth;
   const isApiCall = request.nextUrl.pathname.startsWith("/api/v1");
-
+  // return true
   // If call API backend which unauthorized -> return 401
   if (isApiCall && !isLoggedIn) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });

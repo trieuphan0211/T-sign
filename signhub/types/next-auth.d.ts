@@ -6,6 +6,7 @@ declare module "next-auth" {
    */
   interface Session {
     accessToken?: string;
+    idToken?: string;
     // Giữ lại các trường mặc định của user (name, email, image) và thêm các trường khác nếu cần
     user: {
       role?: string;
@@ -17,6 +18,7 @@ declare module "next-auth/jwt" {
    * Mở rộng kiểu JWT để có thêm accessToken, refreshToken, và các field khác
    */
   interface JWT {
+    idToken?: string;
     accessToken?: string;
     refreshToken?: string;
     expiresAt?: number;

@@ -180,7 +180,23 @@
     @apply bg-background text-foreground;
   }
 }
+@layer utilities {
+  .glass {
+    @apply bg-card/80 backdrop-blur-md;
+  }
 
+  .shadow-card {
+    box-shadow: var(--shadow-card);
+  }
+
+  .gradient-primary {
+    background: var(--gradient-primary);
+  }
+
+  .gradient-accent {
+    background: var(--gradient-accent);
+  }
+}
 @keyframes fadeIn {
   from {
     opacity: 0;
