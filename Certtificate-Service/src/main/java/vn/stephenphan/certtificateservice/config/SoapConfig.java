@@ -1,5 +1,6 @@
 package vn.stephenphan.certtificateservice.config;
 
+import lombok.extern.log4j.Log4j2;
 import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
 import org.apache.hc.client5.http.impl.classic.HttpClients;
 import org.apache.hc.client5.http.impl.io.PoolingHttpClientConnectionManagerBuilder;
@@ -25,12 +26,16 @@ import java.io.InputStream;
 import java.security.KeyStore;
 
 @Configuration
+@Log4j2
 public class SoapConfig {
     @Value("${ejbca.keystore-path}")
     private String keyStorePath;
 
     @Value("${ejbca.keystore-password}")
     private String keyStorePassword;
+    
+    @Value("${ejbca.soap-url:https://localhost/ejbca/ejbcaws/ejbcaws}")
+    private String ejbcaSoapUrl;
     @Bean
     public Jaxb2Marshaller marshaller() {
         Jaxb2Marshaller marshaller = new Jaxb2Marshaller();
@@ -43,7 +48,7 @@ public class SoapConfig {
         WebServiceTemplate template = new WebServiceTemplate();
         template.setMarshaller(marshaller);
         template.setUnmarshaller(marshaller);
-        template.setDefaultUri("https://localhost/ejbca/ejbcaws/ejbcaws"); // URL EJBCA
+        template.setDefaultUri(ejbcaSoapUrl); // URL EJBCA SOAP API
 
         // Cấu hình SSL (Client Certificate)
         template.setMessageSender(httpComponentsMessageSender());
@@ -54,7 +59,7 @@ public class SoapConfig {
         // 1. Load Keystore (SuperAdmin P12)
         KeyStore keyStore = KeyStore.getInstance("PKCS12");
         keyStore.load(new ClassPathResource(keyStorePath).getInputStream(),keyStorePassword.toCharArray());
-
+        log.info("KeyStore loaded: {}", keyStore);
         // 2. Build SSL Context (Trust all - chỉ dùng cho DEV, Prod cần Truststore xịn)
         SSLContext sslContext = SSLContexts.custom()
                 .loadKeyMaterial(keyStore, keyStorePassword.toCharArray())
